@@ -4,7 +4,7 @@
 Запуск:
   python3 check_skill.py <папка-скилла или папка со скиллами>
   python3 check_skill.py --compare <старая-папка> <новая-папка>
-Зависимостей нет, нужен только Python 3.8+.
+Зависимостей нет, нужен только Python 3.8+. В Windows запускай как `python` или `py`.
 """
 import os
 import re
@@ -73,7 +73,7 @@ def check(skill):
         out.append(f'SKILL.md {lines} строк > {MAX_BODY_LINES}')
 
     files = [f for f in skill.rglob('*') if f.is_file() and f.suffix == '.md' and f.name != 'SKILL.md']
-    mentioned = lambda t, f: str(f.relative_to(skill)) in t or f.name in t
+    mentioned = lambda t, f: f.relative_to(skill).as_posix() in t or f.name in t
     linked = {f for f in files if mentioned(text, f)}
 
     for link in md_links(body):
@@ -106,7 +106,7 @@ def check(skill):
     code = '\n'.join(re.findall(r'(?:`{3,}|~{3,})[^\n]*\n(.*?)(?:`{3,}|~{3,})', text, re.S))
     for f in skill.rglob('*'):
         if f.is_file() and f.suffix != '.md' and '__pycache__' not in f.parts:
-            rel = str(f.relative_to(skill))
+            rel = f.relative_to(skill).as_posix()
             if re.search(r'(?<![\w/}.~-])' + re.escape(rel) + r'(?![\w/-])', code):
                 out.append(f'команда с {rel} без ${{CLAUDE_SKILL_DIR}}')
     if manual:
@@ -127,6 +127,8 @@ def compare(old, new):
 
 
 def main(argv):
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')  # кириллица в консоли Windows
     if len(argv) < 2:
         print(__doc__)
         return 2
